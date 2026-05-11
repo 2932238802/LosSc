@@ -1,6 +1,6 @@
 import sqlite3 
 from typing import List,Dict,Any
-from LosConfig import DB_PATH,DATA_DIR
+from core.LosConfig import DB_PATH,DATA_DIR
 
 class LosDb:
 
