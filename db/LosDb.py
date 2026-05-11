@@ -66,6 +66,7 @@ class LosDb:
             summary TEXT,
             published TEXT,
             source TEXT,
+            image_url TEXT,
             created_at TEXT DEFAULT CURRENT_TIMESTAMP
         )
         """)
@@ -74,15 +75,15 @@ class LosDb:
 
 
     """
-    public tool 
+    public tool get
     """
-    def Lf_get_latest_news_db(
+    def Lf_get_latest_news(
         self,
         limit:int = 20,
     ) -> List[Any]:
         self.L_cursor.execute(
             """
-            SELECT id,title,link,summary,published,source,created_at
+            SELECT id,title,link,summary,published,source,image_url,created_at
             FROM news
             ORDER BY id DESC
             LIMIT ?            
@@ -97,8 +98,42 @@ class LosDb:
         return [dict(row) for row in rows]
 
 
+
+
     """
-    public tool
+    public tool get
+    - 
+    """
+    def Lf_get_latest_news_by_page(
+        self,
+        page:int = 1,
+        page_size:int = 20
+    ) -> List[Dict[str,Any]]:
+        if page < 1:
+            page = 1
+        if page_size < 1:
+            page_size = 20
+            
+        offset = (page - 1) * page_size
+        
+        self.L_cursor.execute(
+            """
+            SELECT id,title,link,summary,published,source,image_url,created_at
+            FROM news
+            ORDER BY id DESC            
+            LIMIT ?
+            OFFSET ?
+            """
+            ,
+            (page_size,offset,)
+        )
+        rows = self.L_cursor.fetchall()
+        return [dict(row) for row in rows]
+
+
+
+    """
+    public tool get
     """
     def Lf_get_count(self):
         # COUNT(*) 返回结果类似 (35,)
@@ -131,7 +166,8 @@ class LosDb:
         link:str,
         summary:str = '',
         published:str ='',
-        source:str = ''
+        source:str = '',
+        image_url:str = ''
     ) -> bool:
         # IGNORE 就是插入重复的时候 不要报错
         self.L_cursor.execute(
@@ -141,12 +177,13 @@ class LosDb:
             link,
             summary,
             published,
-            source                
+            source,
+            image_url                
         )
-        VALUES (?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ? , ?)
         """
         , 
-        (title, link, summary, published, source))
+        (title, link, summary, published, source,image_url))
         self.L_conn.commit()
         
         return self.L_cursor.rowcount == 1

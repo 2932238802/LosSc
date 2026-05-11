@@ -35,7 +35,9 @@ class LosBBCService:
         insert_number = 0
         ignore_number = 0
              
-        #  一次调用 __exit__ __enter__
+        #  一次调用 
+        # __exit__ 
+        # __enter__
         with LosDb() as db:
             for news in news_list:
                 is_insert:bool = db.Lf_insert_news_db(
@@ -43,7 +45,8 @@ class LosBBCService:
                     link=news["link"],
                     summary=news["summary"],
                     published=news["published"],
-                    source=news["source"]
+                    source=news.get("source",""),
+                    image_url=news.get("image_url", "")
                 )
                 if is_insert:
                     insert_number+=1
@@ -68,10 +71,36 @@ class LosBBCService:
     """
     def Lf_get_latest_news(self,limit:int=20) -> List[Dict[str,Any]]:
         with LosDb() as db:
-            return db.Lf_get_latest_news_db(limit)
+            return db.Lf_get_latest_news(limit)
         
         
     
+    """
+    public tool get
+    """
+    def Lf_get_latest_news_by_page(
+        self,
+        page:int = 1,
+        page_size: int = 20
+        ) -> Dict[str, Any]:
+        
+        with LosDb() as db:
+            # id,title,link,summary,published,source,image_url,created_a
+            items = db.Lf_get_latest_news_by_page(page=page,page_size=page_size)
+            total_number = db.Lf_get_count()
+        
+        total_page = (total_number + page_size - 1) // page_size
+        return{
+            "page":page,
+            "page_size" : page_size,
+            "total_number": total_number,
+            "total_page" : total_page,
+            "has_next" : page < total_page,
+            "has_prev" : page > 1,
+            "items":items
+        }
+        
+            
         
     
     

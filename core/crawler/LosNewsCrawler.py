@@ -4,6 +4,26 @@ from core.crawler.LosBaseCrawler import LosBaseCrawler
 from bs4 import BeautifulSoup
 import requests
 
+
+# 注意 RSS 的 格式
+# <rss>
+#   <channel>
+#     <item>
+#       <title>新闻标题</title>
+#       <link>新闻链接</link>
+#       <description>新闻摘要</description>
+#       <pubDate>发布时间</pubDate>
+#       <media:thumbnail url="https://example.com/a.jpg" />
+#     </item>
+
+#     <item>
+#       ...
+#     </item>
+#   </channel>
+# </rss>
+
+
+
 class LosNewsCrawler(LosBaseCrawler):
     
     
@@ -50,16 +70,20 @@ class LosNewsCrawler(LosBaseCrawler):
             link_tag = item.find("link")
             summary_tag = item.find("description")
             published_tag = item.find("pubDate")
+            media_thumbnail = item.find("media:thumbnail")
+            media_content = item.find("media:content")
             title = title_tag.get_text(strip=True) if title_tag else ""
             link = link_tag.get_text(strip=True) if link_tag else ""
             summary = summary_tag.get_text(strip=True) if summary_tag else ""
             published = published_tag.get_text(strip=True) if published_tag else ""
+            image_url = media_thumbnail.get("url","") if media_thumbnail is not None else (media_content.get("url", "") if media_content is not None else "")
             if title and link:
                 news_list.append({
                     "title": title,
                     "link": link,
                     "summary": summary,
                     "published": published,
-                    "source": self.L_source
+                    "source": self.L_source,
+                    "image_url" : image_url
                 })
         return news_list
