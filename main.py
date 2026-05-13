@@ -1,4 +1,4 @@
-from core.router import app
+from core.LosApp import app
 
 if __name__ == "__main__":
     pass    

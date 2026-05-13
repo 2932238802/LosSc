@@ -15,7 +15,6 @@ import requests
 #       <pubDate>发布时间</pubDate>
 #       <media:thumbnail url="https://example.com/a.jpg" />
 #     </item>
-
 #     <item>
 #       ...
 #     </item>
@@ -26,7 +25,6 @@ import requests
 
 class LosNewsCrawler(LosBaseCrawler):
     
-    
     """
     init 
     
@@ -35,11 +33,13 @@ class LosNewsCrawler(LosBaseCrawler):
     def __init__(
         self, 
         url: str, 
-        source:str,
+        news_name: str,
+        column_name: str,
         timeout: int = 10,
         ) -> None:
         super().__init__(url, timeout)
-        self.L_source = source
+        self.L_news_name = news_name
+        self.L_column_name = column_name
     
     
         
@@ -65,6 +65,14 @@ class LosNewsCrawler(LosBaseCrawler):
         bf = BeautifulSoup(data,"xml")
         items = bf.find_all("item")
         news_list: List[Dict[str, Any]] = []
+        # [
+        #     {
+                
+        #     },
+        #     {
+                
+        #     }
+        # ] # type: ignore
         for item in items:
             title_tag = item.find("title")
             link_tag = item.find("link")
@@ -83,7 +91,8 @@ class LosNewsCrawler(LosBaseCrawler):
                     "link": link,
                     "summary": summary,
                     "published": published,
-                    "source": self.L_source,
+                    "news_name": self.L_news_name,
+                    "column_name": self.L_column_name,
                     "image_url" : image_url
                 })
         return news_list

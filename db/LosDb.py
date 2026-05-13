@@ -53,9 +53,8 @@ class LosDb:
     init
     
     初始化数据库    
-    summary 新闻摘要
-    published 发布时间
-    source 新闻来源
+    news_name 新闻网站名字，例如 BBC / RMW
+    column_name 新闻网站下的栏目，例如 top / xwyk / world
     """
     def _Lf_init_db(self):
         self.L_cursor.execute("""
@@ -65,7 +64,8 @@ class LosDb:
             link TEXT NOT NULL UNIQUE,
             summary TEXT,
             published TEXT,
-            source TEXT,
+            news_name TEXT,
+            column_name TEXT,
             image_url TEXT,
             created_at TEXT DEFAULT CURRENT_TIMESTAMP
         )
@@ -80,10 +80,10 @@ class LosDb:
     def Lf_get_latest_news(
         self,
         limit:int = 20,
-    ) -> List[Any]:
+    ) -> List[Dict[str,Any]]:
         self.L_cursor.execute(
             """
-            SELECT id,title,link,summary,published,source,image_url,created_at
+            SELECT id,title,link,summary,published,news_name,column_name,image_url,created_at
             FROM news
             ORDER BY id DESC
             LIMIT ?            
@@ -118,7 +118,7 @@ class LosDb:
         
         self.L_cursor.execute(
             """
-            SELECT id,title,link,summary,published,source,image_url,created_at
+            SELECT id,title,link,summary,published,news_name,column_name,image_url,created_at
             FROM news
             ORDER BY id DESC            
             LIMIT ?
@@ -127,6 +127,9 @@ class LosDb:
             ,
             (page_size,offset,)
         )
+        
+        # 和 commit 不同
+        # commit 会修改表的结构
         rows = self.L_cursor.fetchall()
         return [dict(row) for row in rows]
 
@@ -134,8 +137,142 @@ class LosDb:
 
     """
     public tool get
+    
+    获取指定新闻网站的最新新闻
     """
-    def Lf_get_count(self):
+    def Lf_get_latest_news_by_news_name(
+        self,
+        news_name: str,
+        limit:int = 20
+    ) -> List[Dict[str,Any]]:
+        self.L_cursor.execute(
+            """
+            SELECT id,title,link,summary,published,news_name,column_name,image_url,created_at
+            FROM news
+            WHERE news_name = ?
+            ORDER BY id DESC
+            LIMIT ?            
+            """
+            ,
+            (news_name, limit,)
+        )        
+        rows = self.L_cursor.fetchall()
+        return [dict(row) for row in rows]
+
+
+
+    """
+    public tool get
+    
+    分页获取指定新闻网站的新闻
+    """
+    def Lf_get_latest_news_by_news_name_and_page(
+        self,
+        news_name: str,
+        page:int = 1,
+        page_size:int = 20
+    )-> List[Dict[str,Any]]:
+        if page < 1 :
+            page = 1
+        if page_size < 1:
+            page_size = 20
+        
+        offset = (page - 1) * page_size
+        self.L_cursor.execute(
+            """
+            SELECT id,title,link,summary,published,news_name,column_name,image_url,created_at
+            FROM news
+            WHERE news_name = ?
+            ORDER BY id DESC            
+            LIMIT ?
+            OFFSET ?
+            """
+            ,
+            (news_name,page_size,offset,)
+        )
+        rows = self.L_cursor.fetchall()
+        return [dict(row) for row in rows]
+
+
+
+    """
+    public tool get
+    
+    分页获取指定新闻网站下指定栏目的新闻
+    """
+    def Lf_get_latest_news_by_news_name_and_column_name_and_page(
+        self,
+        news_name: str,
+        column_name: str,
+        page:int = 1,
+        page_size:int = 20
+    )-> List[Dict[str,Any]]:
+        if page < 1 :
+            page = 1
+        if page_size < 1:
+            page_size = 20
+        
+        offset = (page - 1) * page_size
+        self.L_cursor.execute(
+            """
+            SELECT id,title,link,summary,published,news_name,column_name,image_url,created_at
+            FROM news
+            WHERE news_name = ? AND column_name = ?
+            ORDER BY id DESC            
+            LIMIT ?
+            OFFSET ?
+            """
+            ,
+            (news_name,column_name,page_size,offset,)
+        )
+        rows = self.L_cursor.fetchall()
+        return [dict(row) for row in rows]
+
+
+
+    """
+    public tool get
+    获取 新闻网站列表
+    """
+    def Lf_get_news_names(self) -> List[str]:
+        self.L_cursor.execute(
+            """
+            SELECT DISTINCT news_name
+            FROM news
+            WHERE news_name IS NOT NULL AND news_name != ''
+            ORDER BY news_name ASC            
+            """
+        )
+        rows = self.L_cursor.fetchall()
+        return [row["news_name"] for row in rows]
+
+
+
+    """
+    public tool get
+    
+    获取指定新闻网站下的栏目列表
+    """
+    def Lf_get_column_names_by_news_name(self,news_name:str) -> List[str]:
+        self.L_cursor.execute(
+            """
+            SELECT DISTINCT column_name
+            FROM news
+            WHERE news_name = ? AND column_name IS NOT NULL AND column_name != ''
+            ORDER BY column_name ASC            
+            """
+            ,
+            (news_name,)
+        )
+        rows = self.L_cursor.fetchall()
+        return [row["column_name"] for row in rows]
+
+
+
+    """
+    public tool get
+    """
+    def Lf_get_count(self) -> int:
         # COUNT(*) 返回结果类似 (35,)
         self.L_cursor.execute("""
                               SELECT COUNT(*)
@@ -144,6 +281,43 @@ class LosDb:
         row = self.L_cursor.fetchone()
         return row[0]    
 
+
+
+    """
+    public tool get
+    获取 指定新闻网站的新闻个数
+    """
+    def Lf_get_count_by_news_name(self,news_name:str) -> int:
+        self.L_cursor.execute(
+            """
+            SELECT COUNT(*)
+            FROM news
+            WHERE news_name = ?            
+            """
+            ,
+            (news_name,)
+        )
+        res = self.L_cursor.fetchone()
+        return res[0]    
+
+
+
+    """
+    public tool get
+    获取 指定新闻网站下指定栏目的新闻个数
+    """
+    def Lf_get_count_by_news_name_and_column_name(self,news_name:str,column_name:str) -> int:
+        self.L_cursor.execute(
+            """
+            SELECT COUNT(*)
+            FROM news
+            WHERE news_name = ? AND column_name = ?            
+            """
+            ,
+            (news_name,column_name,)
+        )
+        res = self.L_cursor.fetchone()
+        return res[0]    
 
 
 
@@ -166,7 +340,8 @@ class LosDb:
         link:str,
         summary:str = '',
         published:str ='',
-        source:str = '',
+        news_name:str = '',
+        column_name:str = '',
         image_url:str = ''
     ) -> bool:
         # IGNORE 就是插入重复的时候 不要报错
@@ -177,15 +352,17 @@ class LosDb:
             link,
             summary,
             published,
-            source,
+            news_name,
+            column_name,
             image_url                
         )
-        VALUES (?, ?, ?, ?, ? , ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
         """
         , 
-        (title, link, summary, published, source,image_url))
+        (title, link, summary, published, news_name,column_name,image_url))
         self.L_conn.commit()
         
         return self.L_cursor.rowcount == 1
+    
     
         
