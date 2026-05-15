@@ -87,7 +87,7 @@ class LosNewsService:
     """
     public tool
 
-    按 news_name + column_name 分页获取新闻（某个网站下某个栏目）
+    按 news_name + column_name 分页获取新闻 某个网站下某个栏目
     """
     def Lf_get_news_by_news_name_and_column_name_and_page(
         self,

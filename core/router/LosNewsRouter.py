@@ -1,6 +1,8 @@
 
 from fastapi import APIRouter,Query
+from typing import Dict,Any
 from core.service.LosNewsService import LosNewsService
+from core.service.LosNewsArticleService import LosNewsArticleService
 from core.response.LosNewsResponse import LF_LosNewsSuccess
 
 """
@@ -34,7 +36,7 @@ def LF_get_latest_news(limit: int = Query(10, ge=1, le=100)):
 
 """
 分页获取新闻（混合流，按时间）
-用于手机端「快捷信息」页面
+用于手机端 快捷信息 页面
 """
 @LosNewsRouter.get("/bypage")
 def LF_get_latest_news_by_page(
@@ -53,7 +55,6 @@ def LF_get_latest_news_by_page(
 
 
 
-
 """
 获取全部新闻网站列表
 用于手机端 或者 电脑端
@@ -63,7 +64,6 @@ def LF_get_latest_news_by_page(
 def LF_get_news_names():
     service = LosNewsService()
     res = service.Lf_get_news_names()
-    
     return LF_LosNewsSuccess(
         message="news names fetched",
         data={
@@ -84,7 +84,6 @@ def LF_get_column_names_by_news_name(
 ):
     service = LosNewsService()
     res = service.Lf_get_column_names_by_news_name(news_name)
-    
     return LF_LosNewsSuccess(
         message="column names fetched",
         data={
@@ -141,3 +140,18 @@ def LF_get_news_by_news_name_and_column_name_and_page(
         message="news_name and column_name page fetched",
         data=res
     )
+
+
+
+"""
+获取文本信息
+"""
+@LosNewsRouter.get("/article/preview")
+def LF_preview_article(url:str = Query(...)) -> Dict[str,Any]:
+    service = LosNewsArticleService()
+    res = service.Lf_get_article(url)
+    return LF_LosNewsSuccess(
+        message="article fetched",
+        data = res
+    )
+
